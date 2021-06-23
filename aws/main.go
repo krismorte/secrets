@@ -42,6 +42,25 @@ func GetSecret(secretID string) interface{} {
 	return secret
 }
 
+func GetSecretWithRegion(secretID string, region string) interface{} {
+	var secret interface{}
+
+	input := &secretsmanager.GetSecretValueInput{
+		SecretId: aws.String(secretID),
+	}
+
+	svc := getSecretClientWithRegion(region)
+
+	result, err := svc.GetSecretValue(context.TODO(), input)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	json.Unmarshal([]byte(*result.SecretString), &secret)
+
+	return secret
+}
+
 func GetSecretLocally(secretID string, region string, localURL string) interface{} {
 	var secret interface{}
 
@@ -90,6 +109,22 @@ func getSecretClient() *secretsmanager.Client {
 	if &cfg != nil {
 		return secretsmanager.NewFromConfig(cfg)
 	}
+	return nil
+}
+
+func getSecretClientWithRegion(region string) *secretsmanager.Client {
+
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion(region),
+	)
+	if err != nil {
+		log.Fatalf("unable to load SDK config, %v", err)
+	}
+
+	if &cfg != nil {
+		return secretsmanager.NewFromConfig(cfg)
+	}
+
 	return nil
 }
 
